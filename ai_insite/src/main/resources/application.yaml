@@ -1,3 +1,41 @@
 spring:
   application:
     name: ai_insite
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL:jdbc:mysql://localhost:3306/ai_insite?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:1234}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+external:
+  seoul:
+    enabled: ${SEOUL_API_ENABLED:false}
+    scheduler-enabled: ${SEOUL_SCHEDULER_ENABLED:false}
+    base-url: ${SEOUL_API_BASE_URL:http://openapi.seoul.go.kr:8088}
+    api-key: ${SEOUL_API_KEY:}
+    schedule-cron: ${SEOUL_SCHEDULE_CRON:0 0 3 * * *}
+    target-period: ${SEOUL_TARGET_PERIOD:}
+    page-size: ${SEOUL_API_PAGE_SIZE:1000}
+    max-pages: ${SEOUL_API_MAX_PAGES:100}
+  public-data:
+    enabled: ${PUBLIC_DATA_API_ENABLED:false}
+    base-url: ${PUBLIC_DATA_API_BASE_URL:https://apis.data.go.kr}
+    service-key: ${PUBLIC_DATA_API_KEY:}
+  kakao:
+    enabled: ${KAKAO_API_ENABLED:false}
+    base-url: ${KAKAO_API_BASE_URL:https://dapi.kakao.com}
+    api-key: ${KAKAO_REST_API_KEY:}
