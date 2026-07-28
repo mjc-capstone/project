@@ -85,6 +85,10 @@ public class AdministrativeLegalDongMappingEntity {
     public void synchronizeObserved(long evidenceCount, LocalDate observedAt) {
         this.evidenceCount = evidenceCount;
         this.mappingRule = "OBSERVED_STORE_CODE_PAIR";
+        if (mappingStatus == RegionMappingStatus.CONFIRMED
+            || mappingStatus == RegionMappingStatus.REJECTED) {
+            return;
+        }
         this.mappingConfidence = evidenceCount >= 3
             ? new BigDecimal("0.9500")
             : new BigDecimal("0.7000");
@@ -98,16 +102,22 @@ public class AdministrativeLegalDongMappingEntity {
     }
 
     public void confirm(String reviewer, String note) {
+        if (reviewer == null || reviewer.isBlank()) {
+            throw new IllegalArgumentException("Reviewer is required.");
+        }
         this.mappingStatus = RegionMappingStatus.CONFIRMED;
         this.mappingConfidence = BigDecimal.ONE.setScale(4);
-        this.reviewedBy = reviewer;
+        this.reviewedBy = reviewer.trim();
         this.reviewedAt = LocalDateTime.now();
         this.reviewNote = note;
     }
 
     public void reject(String reviewer, String note) {
+        if (reviewer == null || reviewer.isBlank()) {
+            throw new IllegalArgumentException("Reviewer is required.");
+        }
         this.mappingStatus = RegionMappingStatus.REJECTED;
-        this.reviewedBy = reviewer;
+        this.reviewedBy = reviewer.trim();
         this.reviewedAt = LocalDateTime.now();
         this.reviewNote = note;
     }

@@ -54,7 +54,9 @@ public class LegalDongSynchronizationService {
             return entity;
         }).toList();
         repository.saveAll(changed);
-        repository.findByActiveTrue().stream()
+        repository.findBySourceSystemAndActiveTrue(
+            "MOIS_STANDARD_REGION_CODE"
+        ).stream()
             .filter(entity -> !sourceCodes.contains(entity.getLegalDongCode()))
             .forEach(entity -> entity.deactivate(sourceReferenceDate.minusDays(1)));
         return changed.size();

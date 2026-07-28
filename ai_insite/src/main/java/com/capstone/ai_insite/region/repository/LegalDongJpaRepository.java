@@ -13,4 +13,6 @@ public interface LegalDongJpaRepository extends JpaRepository<LegalDongEntity, L
     List<LegalDongEntity> findByLegalDongCodeIn(Collection<String> legalDongCodes);
 
     List<LegalDongEntity> findByActiveTrue();
+
+    List<LegalDongEntity> findBySourceSystemAndActiveTrue(String sourceSystem);
 }
