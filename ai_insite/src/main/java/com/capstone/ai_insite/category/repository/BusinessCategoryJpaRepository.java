@@ -21,6 +21,8 @@ public interface BusinessCategoryJpaRepository extends JpaRepository<BusinessCat
         java.util.Collection<String> sourceCategoryCodes
     );
 
+    List<BusinessCategoryEntity> findByActiveTrue();
+
     @Query("""
         select c from BusinessCategoryEntity c
         where c.active = true

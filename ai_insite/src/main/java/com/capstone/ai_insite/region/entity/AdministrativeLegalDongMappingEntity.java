@@ -1,7 +1,10 @@
 package com.capstone.ai_insite.region.entity;
 
+import com.capstone.ai_insite.region.domain.RegionMappingStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -40,6 +43,22 @@ public class AdministrativeLegalDongMappingEntity {
     @Column(name = "mapping_rule", nullable = false, length = 100)
     private String mappingRule;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mapping_status", nullable = false, length = 30)
+    private RegionMappingStatus mappingStatus;
+
+    @Column(name = "evidence_count", nullable = false)
+    private long evidenceCount;
+
+    @Column(name = "reviewed_by", length = 100)
+    private String reviewedBy;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+
+    @Column(name = "review_note", length = 500)
+    private String reviewNote;
+
     @Column(name = "effective_from")
     private LocalDate effectiveFrom;
 
@@ -51,4 +70,59 @@ public class AdministrativeLegalDongMappingEntity {
 
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
+
+    public static AdministrativeLegalDongMappingEntity create(
+        RegionEntity region,
+        LegalDongEntity legalDong
+    ) {
+        AdministrativeLegalDongMappingEntity entity =
+            new AdministrativeLegalDongMappingEntity();
+        entity.region = region;
+        entity.legalDong = legalDong;
+        return entity;
+    }
+
+    public void synchronizeObserved(long evidenceCount, LocalDate observedAt) {
+        this.evidenceCount = evidenceCount;
+        this.mappingRule = "OBSERVED_STORE_CODE_PAIR";
+        if (mappingStatus == RegionMappingStatus.CONFIRMED
+            || mappingStatus == RegionMappingStatus.REJECTED) {
+            return;
+        }
+        this.mappingConfidence = evidenceCount >= 3
+            ? new BigDecimal("0.9500")
+            : new BigDecimal("0.7000");
+        this.mappingStatus = evidenceCount >= 3
+            ? RegionMappingStatus.AUTO_CONFIRMED
+            : RegionMappingStatus.CANDIDATE;
+        if (effectiveFrom == null || observedAt.isBefore(effectiveFrom)) {
+            effectiveFrom = observedAt;
+        }
+        effectiveTo = null;
+    }
+
+    public void confirm(String reviewer, String note) {
+        if (reviewer == null || reviewer.isBlank()) {
+            throw new IllegalArgumentException("Reviewer is required.");
+        }
+        this.mappingStatus = RegionMappingStatus.CONFIRMED;
+        this.mappingConfidence = BigDecimal.ONE.setScale(4);
+        this.reviewedBy = reviewer.trim();
+        this.reviewedAt = LocalDateTime.now();
+        this.reviewNote = note;
+    }
+
+    public void reject(String reviewer, String note) {
+        if (reviewer == null || reviewer.isBlank()) {
+            throw new IllegalArgumentException("Reviewer is required.");
+        }
+        this.mappingStatus = RegionMappingStatus.REJECTED;
+        this.reviewedBy = reviewer.trim();
+        this.reviewedAt = LocalDateTime.now();
+        this.reviewNote = note;
+    }
+
+    public boolean isUsable() {
+        return mappingStatus != null && mappingStatus.isUsable();
+    }
 }
