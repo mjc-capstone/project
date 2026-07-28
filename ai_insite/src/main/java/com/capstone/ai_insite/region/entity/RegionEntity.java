@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -49,6 +50,15 @@ public class RegionEntity {
     @Column(name = "is_active", nullable = false)
     private boolean active;
 
+    @Column(name = "source_system", length = 50)
+    private String sourceSystem;
+
+    @Column(name = "effective_from")
+    private LocalDate effectiveFrom;
+
+    @Column(name = "effective_to")
+    private LocalDate effectiveTo;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -86,5 +96,7 @@ public class RegionEntity {
         this.sidoCode = "11";
         this.sidoName = "서울특별시";
         this.active = true;
+        this.sourceSystem = "SEOUL_OPEN_DATA";
+        this.effectiveTo = null;
     }
 }
