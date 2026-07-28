@@ -1,7 +1,11 @@
 package com.capstone.ai_insite.category.entity;
 
+import com.capstone.ai_insite.category.domain.MappingReviewType;
+import com.capstone.ai_insite.category.domain.MappingStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -43,9 +47,60 @@ public class CategoryCodeMappingEntity {
     @Column(name = "mapping_rule", nullable = false, length = 100)
     private String mappingRule;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mapping_status", nullable = false, length = 30)
+    private MappingStatus mappingStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "review_type", nullable = false, length = 30)
+    private MappingReviewType reviewType;
+
+    @Column(name = "reviewed_by", length = 100)
+    private String reviewedBy;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+
+    @Column(name = "review_note", length = 500)
+    private String reviewNote;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
+
+    public static CategoryCodeMappingEntity create(
+        String smallBusinessCategoryCode,
+        String ksicCode,
+        BusinessCategoryEntity target,
+        BigDecimal confidence,
+        String rule,
+        MappingStatus status,
+        MappingReviewType reviewType,
+        String reviewedBy,
+        String reviewNote
+    ) {
+        CategoryCodeMappingEntity entity = new CategoryCodeMappingEntity();
+        entity.smallBusinessCategoryCode = blankToNull(smallBusinessCategoryCode);
+        entity.ksicCode = blankToNull(ksicCode);
+        entity.normalizedCategoryCode = target.getNormalizedCategoryCode();
+        entity.normalizedCategoryName = target.getNormalizedCategoryName();
+        entity.mappingConfidence = confidence;
+        entity.mappingRule = rule;
+        entity.mappingStatus = status;
+        entity.reviewType = reviewType;
+        entity.reviewedBy = blankToNull(reviewedBy);
+        entity.reviewedAt = reviewedBy == null ? null : LocalDateTime.now();
+        entity.reviewNote = blankToNull(reviewNote);
+        return entity;
+    }
+
+    public boolean isConfirmed() {
+        return mappingStatus != null && mappingStatus.isConfirmed();
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
 }
