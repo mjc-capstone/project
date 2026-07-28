@@ -6,8 +6,28 @@ public record RawPayloadCommand(
     String requestUrl,
     String requestParamsJson,
     String responseBodyJson,
-    Integer rowCount
+    Integer rowCount,
+    Long dataImportJobId
 ) {
+    public RawPayloadCommand(
+        String sourceName,
+        String serviceName,
+        String requestUrl,
+        String requestParamsJson,
+        String responseBodyJson,
+        Integer rowCount
+    ) {
+        this(
+            sourceName,
+            serviceName,
+            requestUrl,
+            requestParamsJson,
+            responseBodyJson,
+            rowCount,
+            null
+        );
+    }
+
     public RawPayloadCommand {
         if (sourceName == null || sourceName.isBlank()) {
             throw new IllegalArgumentException("sourceName은 필수입니다.");
