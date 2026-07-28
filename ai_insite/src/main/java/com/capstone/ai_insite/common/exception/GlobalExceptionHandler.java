@@ -21,4 +21,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest()
             .body(new ApiErrorResponse("INVALID_ARGUMENT", exception.getMessage(), Instant.now()));
     }
+
+    @ExceptionHandler(ActiveDataImportJobException.class)
+    public ResponseEntity<ApiErrorResponse> handleActiveImportJob(
+        ActiveDataImportJobException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ApiErrorResponse(
+                "IMPORT_JOB_ALREADY_RUNNING",
+                exception.getMessage(),
+                Instant.now()
+            ));
+    }
 }

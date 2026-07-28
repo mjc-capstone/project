@@ -35,6 +35,10 @@ external:
     enabled: ${PUBLIC_DATA_API_ENABLED:false}
     base-url: ${PUBLIC_DATA_API_BASE_URL:https://apis.data.go.kr}
     service-key: ${PUBLIC_DATA_API_KEY:}
+    small-business:
+      path: ${SMALL_BUSINESS_API_PATH:/B553077/api/open/sdsc2/storeListInDong}
+      page-size: ${SMALL_BUSINESS_API_PAGE_SIZE:1000}
+      max-pages-per-district: ${SMALL_BUSINESS_API_MAX_PAGES:100}
   kakao:
     enabled: ${KAKAO_API_ENABLED:false}
     base-url: ${KAKAO_API_BASE_URL:https://dapi.kakao.com}

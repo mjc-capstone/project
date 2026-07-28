@@ -43,6 +43,12 @@ public class LegalDongEntity {
     @Column(name = "is_active", nullable = false)
     private boolean active;
 
+    @Column(name = "source_system", length = 50)
+    private String sourceSystem;
+
+    @Column(name = "source_reference_date")
+    private LocalDate sourceReferenceDate;
+
     @Column(name = "effective_from")
     private LocalDate effectiveFrom;
 
@@ -54,4 +60,38 @@ public class LegalDongEntity {
 
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
+
+    public static LegalDongEntity create(String legalDongCode) {
+        LegalDongEntity entity = new LegalDongEntity();
+        entity.legalDongCode = legalDongCode;
+        return entity;
+    }
+
+    public void synchronize(
+        String legalDongCode,
+        String sidoCode,
+        String sidoName,
+        String sigunguCode,
+        String sigunguName,
+        String legalDongName,
+        LocalDate effectiveFrom,
+        LocalDate sourceReferenceDate
+    ) {
+        this.legalDongCode = legalDongCode;
+        this.sidoCode = sidoCode;
+        this.sidoName = sidoName;
+        this.sigunguCode = sigunguCode;
+        this.sigunguName = sigunguName;
+        this.legalDongName = legalDongName;
+        this.effectiveFrom = effectiveFrom;
+        this.effectiveTo = null;
+        this.active = true;
+        this.sourceSystem = "MOIS_STANDARD_REGION_CODE";
+        this.sourceReferenceDate = sourceReferenceDate;
+    }
+
+    public void deactivate(LocalDate effectiveTo) {
+        this.active = false;
+        this.effectiveTo = effectiveTo;
+    }
 }
