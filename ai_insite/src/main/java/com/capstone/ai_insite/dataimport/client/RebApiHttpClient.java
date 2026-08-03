@@ -26,6 +26,9 @@ public class RebApiHttpClient implements RebApiClient {
 
     @Override
     public String fetchStatistics(Map<String, String> queryParameters) {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException("REB API key is required.");
+        }
         return restClient.get()
             .uri(uriBuilder -> {
                 var builder = uriBuilder.path(statisticsPath)

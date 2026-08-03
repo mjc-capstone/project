@@ -39,7 +39,12 @@ public class CommercialTransactionXmlParser {
             if (!"000".equals(resultCode)) {
                 throw new IllegalArgumentException(
                     "MOLIT API error: " + resultCode + " "
-                        + text(root, "resultMsg")
+                        + text(root, "resultMsg") + " | root="
+                        + root.getTagName() + " | response="
+                        + responseBody.substring(
+                            0,
+                            Math.min(300, responseBody.length())
+                        )
                 );
             }
             List<CommercialTransactionRow> rows = new ArrayList<>();

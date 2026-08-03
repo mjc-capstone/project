@@ -44,6 +44,7 @@ public class CostSourcePersistenceService {
         List<CollectedRebCommercialRentObservation> collected
     ) {
         rebRepository.deleteByMetricPeriodId(period.getId());
+        rebRepository.flush();
         List<SourceRebCommercialRentStatEntity> entities = collected.stream()
             .map(value -> new SourceRebCommercialRentStatEntity(
                 value.rawApiPayload(),
@@ -67,6 +68,7 @@ public class CostSourcePersistenceService {
                 period.getEndDate()
             )
         );
+        transactionRepository.flush();
         Map<String, Map<String, LegalDongEntity>> legalDongsByDistrict =
             legalDongs(districtCodes);
         Map<String, Integer> occurrences = new HashMap<>();
