@@ -38,6 +38,10 @@ external:
     commercial-transaction:
       path: ${COMMERCIAL_TRANSACTION_API_PATH:/1613000/RTMSDataSvcNrgTrade/getRTMSDataSvcNrgTrade}
       page-size: ${COMMERCIAL_TRANSACTION_API_PAGE_SIZE:1000}
+    building-register:
+      path: ${BUILDING_REGISTER_API_PATH:/1613000/BldRgstHubService/getBrTitleInfo}
+      page-size: ${BUILDING_REGISTER_API_PAGE_SIZE:1000}
+      max-pages-per-legal-dong: ${BUILDING_REGISTER_API_MAX_PAGES_PER_LEGAL_DONG:100}
     small-business:
       path: ${SMALL_BUSINESS_API_PATH:/B553077/api/open/sdsc2/storeListInDong}
       page-size: ${SMALL_BUSINESS_API_PAGE_SIZE:1000}

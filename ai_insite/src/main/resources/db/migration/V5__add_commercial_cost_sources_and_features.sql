@@ -110,6 +110,11 @@ CREATE TABLE legal_dong_period_cost_features (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 ALTER TABLE region_cost_features
+    ADD INDEX idx_region_cost_region_fk (region_id),
+    ADD INDEX idx_region_cost_legal_dong_fk (legal_dong_id),
+    ADD INDEX idx_region_cost_period_fk (metric_period_id);
+
+ALTER TABLE region_cost_features
     DROP INDEX uk_region_cost_features,
     ADD COLUMN source_system VARCHAR(40) NOT NULL DEFAULT 'LEGACY'
         AFTER metric_period_id,
