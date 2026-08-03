@@ -18,6 +18,19 @@ public interface CommercialMetricSnapshotJpaRepository
 
     List<CommercialMetricSnapshotEntity> findAllByMetricPeriodId(Long metricPeriodId);
 
+    List<CommercialMetricSnapshotEntity>
+        findByMetricPeriodStartDateBetweenOrderByMetricPeriodStartDateAsc(
+            LocalDate from,
+            LocalDate to
+        );
+
+    Optional<CommercialMetricSnapshotEntity>
+        findByRegionIdAndBusinessCategoryIdAndMetricPeriodStartDate(
+            Long regionId,
+            Long businessCategoryId,
+            LocalDate periodStartDate
+        );
+
     Optional<CommercialMetricSnapshotEntity>
         findByRegionAdministrativeDongCodeAndBusinessCategorySourceCategoryCodeAndMetricPeriodPeriodCode(
             String regionCode,

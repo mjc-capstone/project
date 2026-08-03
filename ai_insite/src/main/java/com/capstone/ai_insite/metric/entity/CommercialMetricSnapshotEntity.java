@@ -90,13 +90,13 @@ public class CommercialMetricSnapshotEntity {
     @Column(name = "close_rate", precision = 8, scale = 4)
     private BigDecimal closeRate;
 
-    @Column(name = "sales_growth_rate_qoq", precision = 8, scale = 4)
+    @Column(name = "sales_growth_rate_qoq", precision = 24, scale = 4)
     private BigDecimal salesGrowthRateQoq;
 
-    @Column(name = "sales_growth_rate_yoy", precision = 8, scale = 4)
+    @Column(name = "sales_growth_rate_yoy", precision = 24, scale = 4)
     private BigDecimal salesGrowthRateYoy;
 
-    @Column(name = "store_growth_rate_qoq", precision = 8, scale = 4)
+    @Column(name = "store_growth_rate_qoq", precision = 24, scale = 4)
     private BigDecimal storeGrowthRateQoq;
 
     @Column(name = "franchise_ratio", precision = 8, scale = 4)

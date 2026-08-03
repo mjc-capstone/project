@@ -65,6 +65,22 @@ public class CommercialMetricQueryService {
             .toList();
     }
 
+    public List<CommercialMetric> getAll(String fromPeriod, String toPeriod) {
+        MetricPeriodEntity from = period(fromPeriod);
+        MetricPeriodEntity to = period(toPeriod);
+        if (from.getStartDate().isAfter(to.getEndDate())) {
+            throw new IllegalArgumentException("조회 시작 분기는 종료 분기보다 늦을 수 없습니다.");
+        }
+        return snapshotRepository
+            .findByMetricPeriodStartDateBetweenOrderByMetricPeriodStartDateAsc(
+                from.getStartDate(),
+                to.getEndDate()
+            )
+            .stream()
+            .map(snapshot -> CommercialMetricMapper.toDomain(snapshot, feature(snapshot)))
+            .toList();
+    }
+
     private RegionPeriodFeatureEntity feature(CommercialMetricSnapshotEntity snapshot) {
         return featureRepository
             .findByRegionIdAndMetricPeriodId(
