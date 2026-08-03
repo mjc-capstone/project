@@ -4,10 +4,14 @@ import com.capstone.ai_insite.analysis.entity.ModelFeatureSnapshotEntity;
 import com.capstone.ai_insite.analysis.repository.ModelFeatureSnapshotJpaRepository;
 import com.capstone.ai_insite.common.exception.ResourceNotFoundException;
 import com.capstone.ai_insite.metric.domain.CommercialMetric;
+import com.capstone.ai_insite.metric.domain.BuildingFeatureContext;
+import com.capstone.ai_insite.metric.domain.CostFeatureContext;
 import com.capstone.ai_insite.metric.entity.CommercialMetricSnapshotEntity;
 import com.capstone.ai_insite.metric.entity.CommercialCompetitionFeatureEntity;
 import com.capstone.ai_insite.metric.repository.CommercialCompetitionFeatureJpaRepository;
 import com.capstone.ai_insite.metric.repository.CommercialMetricSnapshotJpaRepository;
+import com.capstone.ai_insite.metric.service.CostFeatureQueryService;
+import com.capstone.ai_insite.metric.service.BuildingFeatureQueryService;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.stereotype.Service;
@@ -17,22 +21,28 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 public class FeatureBuildService {
 
-    public static final String FEATURE_VERSION = "rule-v2-competition";
+    public static final String FEATURE_VERSION = "feature-v3-building";
 
     private final CommercialMetricSnapshotJpaRepository metricRepository;
     private final CommercialCompetitionFeatureJpaRepository competitionRepository;
     private final ModelFeatureSnapshotJpaRepository featureRepository;
+    private final CostFeatureQueryService costFeatureQueryService;
+    private final BuildingFeatureQueryService buildingFeatureQueryService;
     private final ObjectMapper objectMapper;
 
     public FeatureBuildService(
         CommercialMetricSnapshotJpaRepository metricRepository,
         CommercialCompetitionFeatureJpaRepository competitionRepository,
         ModelFeatureSnapshotJpaRepository featureRepository,
+        CostFeatureQueryService costFeatureQueryService,
+        BuildingFeatureQueryService buildingFeatureQueryService,
         ObjectMapper objectMapper
     ) {
         this.metricRepository = metricRepository;
         this.competitionRepository = competitionRepository;
         this.featureRepository = featureRepository;
+        this.costFeatureQueryService = costFeatureQueryService;
+        this.buildingFeatureQueryService = buildingFeatureQueryService;
         this.objectMapper = objectMapper;
     }
 
@@ -51,7 +61,18 @@ public class FeatureBuildService {
                 source.getRegion(),
                 source.getBusinessCategory(),
                 source.getMetricPeriod(),
-                serialize(features(metric, competition(source))),
+                serialize(features(
+                    metric,
+                    competition(source),
+                    costFeatureQueryService.find(
+                        source.getRegion().getId(),
+                        source.getMetricPeriod().getId()
+                    ),
+                    buildingFeatureQueryService.find(
+                        source.getRegion().getId(),
+                        source.getMetricPeriod().getId()
+                    )
+                )),
                 FEATURE_VERSION
             )));
     }
@@ -70,7 +91,9 @@ public class FeatureBuildService {
 
     private static Map<String, Object> features(
         CommercialMetric metric,
-        CommercialCompetitionFeatureEntity competition
+        CommercialCompetitionFeatureEntity competition,
+        CostFeatureContext cost,
+        BuildingFeatureContext building
     ) {
         Map<String, Object> values = new LinkedHashMap<>();
         values.put("sourceMetricSnapshotId", metric.snapshotId());
@@ -117,6 +140,42 @@ public class FeatureBuildService {
                 ? null
                 : competition.getSameCategoryStoreCount()
                     - metric.stores().storeCount()
+        );
+        values.put("rentAmountPerSquareMeter", cost.rentAmountPerSquareMeter());
+        values.put("rentIndex", cost.rentIndex());
+        values.put("vacancyRate", cost.vacancyRate());
+        values.put("investmentReturnRate", cost.investmentReturnRate());
+        values.put("rentPressureScore", cost.rentPressureScore());
+        values.put("vacancyRiskScore", cost.vacancyRiskScore());
+        values.put("fixedCostBurdenIndex", cost.fixedCostBurdenIndex());
+        values.put("commercialTransactionCount", cost.commercialTransactionCount());
+        values.put(
+            "medianCommercialPricePerArea",
+            cost.medianCommercialPricePerArea()
+        );
+        values.put("commercialPriceGrowthRate", cost.priceGrowthRate());
+        values.put("locationCostScore", cost.locationCostScore());
+        values.put("totalBuildingCount", building.totalBuildingCount());
+        values.put("commercialBuildingCount", building.commercialBuildingCount());
+        values.put("averageBuildingAge", building.averageBuildingAge());
+        values.put("agedBuildingRatio", building.agedBuildingRatio());
+        values.put("averageGrossFloorArea", building.averageGrossFloorArea());
+        values.put("totalParkingCount", building.totalParkingCount());
+        values.put(
+            "parkingSpacesPerCommercialBuilding",
+            building.parkingSpacesPerCommercialBuilding()
+        );
+        values.put(
+            "commercialFloorAreaProxy",
+            building.commercialFloorAreaProxy()
+        );
+        values.put(
+            "commercialFloorAreaRatio",
+            building.commercialFloorAreaRatio()
+        );
+        values.put(
+            "physicalEnvironmentScore",
+            building.physicalEnvironmentScore()
         );
         return values;
     }

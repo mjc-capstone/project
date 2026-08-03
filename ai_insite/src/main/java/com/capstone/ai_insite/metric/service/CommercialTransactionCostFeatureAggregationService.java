@@ -16,7 +16,6 @@ import com.capstone.ai_insite.region.entity.LegalDongEntity;
 import com.capstone.ai_insite.region.entity.RegionEntity;
 import com.capstone.ai_insite.region.repository.AdministrativeLegalDongMappingJpaRepository;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -119,6 +118,8 @@ public class CommercialTransactionCostFeatureAggregationService {
             period.getId(),
             SOURCE_SYSTEM
         );
+        legalFeatureRepository.flush();
+        regionFeatureRepository.flush();
         legalFeatureRepository.saveAll(legalFeatures);
         List<RegionCostFeatureEntity> regionFeatures = regionDrafts.stream()
             .map(draft -> regionFeature(
@@ -274,7 +275,7 @@ public class CommercialTransactionCostFeatureAggregationService {
             ? 4
             : period.getQuarter() - 1;
         return periodRepository.findByPeriodCode(
-            previousYear + String.valueOf(previousQuarter)
+            previousYear + "Q" + previousQuarter
         );
     }
 

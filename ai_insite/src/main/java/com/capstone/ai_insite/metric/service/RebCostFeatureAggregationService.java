@@ -8,8 +8,6 @@ import com.capstone.ai_insite.metric.entity.SourceRebCommercialRentStatEntity;
 import com.capstone.ai_insite.metric.repository.RegionCostFeatureJpaRepository;
 import com.capstone.ai_insite.metric.repository.SourceRebCommercialRentStatJpaRepository;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +52,7 @@ public class RebCostFeatureAggregationService {
             period.getId(),
             SOURCE_SYSTEM
         );
+        featureRepository.flush();
         List<RegionCostFeatureEntity> features = aggregates.stream()
             .map(value -> new RegionCostFeatureEntity(
                 null,
