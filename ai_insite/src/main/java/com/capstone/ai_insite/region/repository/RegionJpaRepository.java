@@ -17,6 +17,8 @@ public interface RegionJpaRepository extends JpaRepository<RegionEntity, Long> {
         java.util.Collection<String> administrativeDongCodes
     );
 
+    List<RegionEntity> findByActiveTrue();
+
     @Query("""
         select r from RegionEntity r
         where r.active = true
