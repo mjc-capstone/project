@@ -35,10 +35,19 @@ external:
     enabled: ${PUBLIC_DATA_API_ENABLED:false}
     base-url: ${PUBLIC_DATA_API_BASE_URL:https://apis.data.go.kr}
     service-key: ${PUBLIC_DATA_API_KEY:}
+    commercial-transaction:
+      path: ${COMMERCIAL_TRANSACTION_API_PATH:/1613000/RTMSDataSvcNrgTrade/getRTMSDataSvcNrgTrade}
+      page-size: ${COMMERCIAL_TRANSACTION_API_PAGE_SIZE:1000}
     small-business:
       path: ${SMALL_BUSINESS_API_PATH:/B553077/api/open/sdsc2/storeListInDong}
       page-size: ${SMALL_BUSINESS_API_PAGE_SIZE:1000}
       max-pages-per-district: ${SMALL_BUSINESS_API_MAX_PAGES:100}
+  reb:
+    enabled: ${REB_API_ENABLED:false}
+    base-url: ${REB_API_BASE_URL:https://www.reb.or.kr}
+    api-key: ${REB_API_KEY:}
+    statistics-path: ${REB_STATISTICS_API_PATH:/r-one/openapi/SttsApiTblData.do}
+    page-size: ${REB_API_PAGE_SIZE:1000}
   kakao:
     enabled: ${KAKAO_API_ENABLED:false}
     base-url: ${KAKAO_API_BASE_URL:https://dapi.kakao.com}
