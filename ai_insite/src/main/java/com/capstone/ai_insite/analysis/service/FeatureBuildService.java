@@ -63,6 +63,7 @@ public class FeatureBuildService {
                 source.getMetricPeriod(),
                 serialize(features(
                     metric,
+                    source,
                     competition(source),
                     costFeatureQueryService.find(
                         source.getRegion().getId(),
@@ -86,17 +87,22 @@ public class FeatureBuildService {
                 source.getBusinessCategory().getId(),
                 source.getMetricPeriod().getId()
             )
+            .filter(feature -> !feature.getSnapshotDate().isAfter(
+                source.getMetricPeriod().getEndDate()
+            ))
             .orElse(null);
     }
 
     private static Map<String, Object> features(
         CommercialMetric metric,
+        CommercialMetricSnapshotEntity source,
         CommercialCompetitionFeatureEntity competition,
         CostFeatureContext cost,
         BuildingFeatureContext building
     ) {
         Map<String, Object> values = new LinkedHashMap<>();
         values.put("sourceMetricSnapshotId", metric.snapshotId());
+        values.put("featureAsOfDate", source.getMetricPeriod().getEndDate());
         values.put("salesAmount", metric.sales().salesAmount());
         values.put("salesCount", metric.sales().salesCount());
         values.put("salesGrowthRateQoq", metric.sales().growthRateQoq());
