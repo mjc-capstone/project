@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.capstone.ai_insite.analysis.domain.AnalysisPrediction;
 import com.capstone.ai_insite.analysis.domain.UserBusinessCondition;
 import com.capstone.ai_insite.metric.domain.CommercialMetric;
+import com.capstone.ai_insite.metric.domain.BuildingFeatureContext;
+import com.capstone.ai_insite.metric.domain.CostFeatureContext;
 import com.capstone.ai_insite.metric.domain.DemandMetric;
 import com.capstone.ai_insite.metric.domain.MetricScores;
 import com.capstone.ai_insite.metric.domain.SalesMetric;
@@ -25,6 +27,39 @@ class RiskPredictionPolicyTest {
         assertTrue(matching.successScore().compareTo(excessive.successScore()) > 0);
         assertTrue(matching.positiveFactors().stream().anyMatch(it -> it.contains("목표 매출")));
         assertTrue(excessive.riskFactors().stream().anyMatch(it -> it.contains("목표 매출")));
+    }
+
+    @Test
+    void buildingEnvironmentChangesSuccessAndClosureRisk() {
+        BuildingFeatureContext favorable = building(
+            new BigDecimal("85"),
+            new BigDecimal("10")
+        );
+        BuildingFeatureContext poor = building(
+            new BigDecimal("20"),
+            new BigDecimal("80")
+        );
+
+        AnalysisPrediction favorableResult = policy.predict(
+            metric(),
+            condition(10_000_000L),
+            CostFeatureContext.empty(),
+            favorable
+        );
+        AnalysisPrediction poorResult = policy.predict(
+            metric(),
+            condition(10_000_000L),
+            CostFeatureContext.empty(),
+            poor
+        );
+
+        assertTrue(
+            favorableResult.successScore().compareTo(poorResult.successScore()) > 0
+        );
+        assertTrue(
+            favorableResult.closureRiskScore()
+                .compareTo(poorResult.closureRiskScore()) < 0
+        );
     }
 
     private static CommercialMetric metric() {
@@ -73,6 +108,24 @@ class RiskPredictionPolicyTest {
             "OWNER",
             false,
             null
+        );
+    }
+
+    private static BuildingFeatureContext building(
+        BigDecimal physicalScore,
+        BigDecimal agedRatio
+    ) {
+        return new BuildingFeatureContext(
+            100,
+            40,
+            BigDecimal.valueOf(20),
+            agedRatio,
+            BigDecimal.valueOf(200),
+            100,
+            BigDecimal.valueOf(2.5),
+            BigDecimal.valueOf(8_000),
+            BigDecimal.valueOf(60),
+            physicalScore
         );
     }
 }
