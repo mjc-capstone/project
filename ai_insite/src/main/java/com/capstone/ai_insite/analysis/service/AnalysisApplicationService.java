@@ -6,6 +6,8 @@ import com.capstone.ai_insite.analysis.domain.AnalysisResult;
 import com.capstone.ai_insite.analysis.domain.RecommendationGrade;
 import com.capstone.ai_insite.analysis.domain.policy.RecommendationPolicy;
 import com.capstone.ai_insite.analysis.domain.policy.RiskPredictionPolicy;
+import com.capstone.ai_insite.analysis.domain.policy.CostFitPolicy;
+import com.capstone.ai_insite.analysis.domain.policy.BuildingFitPolicy;
 import com.capstone.ai_insite.analysis.entity.AnalysisRequestEntity;
 import com.capstone.ai_insite.analysis.entity.AnalysisResultEntity;
 import com.capstone.ai_insite.analysis.entity.ModelFeatureSnapshotEntity;
@@ -15,7 +17,11 @@ import com.capstone.ai_insite.category.entity.BusinessCategoryEntity;
 import com.capstone.ai_insite.category.repository.BusinessCategoryJpaRepository;
 import com.capstone.ai_insite.common.exception.ResourceNotFoundException;
 import com.capstone.ai_insite.metric.domain.CommercialMetric;
+import com.capstone.ai_insite.metric.domain.BuildingFeatureContext;
+import com.capstone.ai_insite.metric.domain.CostFeatureContext;
+import com.capstone.ai_insite.metric.service.BuildingFeatureQueryService;
 import com.capstone.ai_insite.metric.service.CommercialMetricQueryService;
+import com.capstone.ai_insite.metric.service.CostFeatureQueryService;
 import com.capstone.ai_insite.region.entity.RegionEntity;
 import com.capstone.ai_insite.region.repository.RegionJpaRepository;
 import java.util.ArrayList;
@@ -36,7 +42,11 @@ public class AnalysisApplicationService {
     private final AnalysisResultJpaRepository resultRepository;
     private final CommercialMetricQueryService metricQueryService;
     private final FeatureBuildService featureBuildService;
+    private final CostFeatureQueryService costFeatureQueryService;
+    private final BuildingFeatureQueryService buildingFeatureQueryService;
     private final RiskPredictionPolicy riskPredictionPolicy;
+    private final CostFitPolicy costFitPolicy;
+    private final BuildingFitPolicy buildingFitPolicy;
     private final RecommendationPolicy recommendationPolicy;
     private final ObjectMapper objectMapper;
 
@@ -47,7 +57,11 @@ public class AnalysisApplicationService {
         AnalysisResultJpaRepository resultRepository,
         CommercialMetricQueryService metricQueryService,
         FeatureBuildService featureBuildService,
+        CostFeatureQueryService costFeatureQueryService,
+        BuildingFeatureQueryService buildingFeatureQueryService,
         RiskPredictionPolicy riskPredictionPolicy,
+        CostFitPolicy costFitPolicy,
+        BuildingFitPolicy buildingFitPolicy,
         RecommendationPolicy recommendationPolicy,
         ObjectMapper objectMapper
     ) {
@@ -57,7 +71,11 @@ public class AnalysisApplicationService {
         this.resultRepository = resultRepository;
         this.metricQueryService = metricQueryService;
         this.featureBuildService = featureBuildService;
+        this.costFeatureQueryService = costFeatureQueryService;
+        this.buildingFeatureQueryService = buildingFeatureQueryService;
         this.riskPredictionPolicy = riskPredictionPolicy;
+        this.costFitPolicy = costFitPolicy;
+        this.buildingFitPolicy = buildingFitPolicy;
         this.recommendationPolicy = recommendationPolicy;
         this.objectMapper = objectMapper;
     }
@@ -83,7 +101,20 @@ public class AnalysisApplicationService {
             new AnalysisRequestEntity(region, category, command)
         );
         ModelFeatureSnapshotEntity feature = featureBuildService.build(metric);
-        AnalysisPrediction prediction = riskPredictionPolicy.predict(metric, command.condition());
+        CostFeatureContext cost = costFeatureQueryService.find(
+            region.getId(),
+            command.periodCode()
+        );
+        BuildingFeatureContext building = buildingFeatureQueryService.find(
+            region.getId(),
+            command.periodCode()
+        );
+        AnalysisPrediction prediction = riskPredictionPolicy.predict(
+            metric,
+            command.condition(),
+            cost,
+            building
+        );
         RecommendationGrade grade = recommendationPolicy.grade(prediction);
         String summary = summary(grade, prediction);
 
@@ -92,6 +123,22 @@ public class AnalysisApplicationService {
         modelOutput.put("successScore", prediction.successScore());
         modelOutput.put("closureRiskScore", prediction.closureRiskScore());
         modelOutput.put("locationFitScore", prediction.locationFitScore());
+        modelOutput.put("costFitScore", costFitPolicy.score(command.condition(), cost));
+        modelOutput.put(
+            "estimatedMonthlyRent",
+            costFitPolicy.estimatedMonthlyRent(command.condition(), cost)
+        );
+        modelOutput.put("fixedCostBurdenIndex", cost.fixedCostBurdenIndex());
+        modelOutput.put("locationCostScore", cost.locationCostScore());
+        modelOutput.put(
+            "buildingFitScore",
+            buildingFitPolicy.score(command.condition(), building)
+        );
+        modelOutput.put(
+            "physicalEnvironmentScore",
+            building.physicalEnvironmentScore()
+        );
+        modelOutput.put("agedBuildingRatio", building.agedBuildingRatio());
 
         AnalysisResultEntity saved = resultRepository.save(new AnalysisResultEntity(
             request,
