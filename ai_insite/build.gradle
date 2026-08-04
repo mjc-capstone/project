@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.1.0'
     id 'io.spring.dependency-management' version '1.1.7'
+    id "org.sonarqube" version "7.3.1.8318"
 }
 
 group = 'com.capstone'
@@ -16,6 +17,15 @@ java {
 
 repositories {
     mavenCentral()
+}
+
+sonar {
+    properties {
+        property "sonar.projectKey", "capstone_ai_insite_39477b6bec09b4be2c1f7a03947"
+        property "sonar.projectName", "capstone_ai_insite"
+        property "sonar.host.url", "http://localhost:9000"
+        property "sonar.token", "sqa_b4be2c1f7a039477b6bec09cd50b4c6066d06c0b"
+    }
 }
 
 dependencies {
