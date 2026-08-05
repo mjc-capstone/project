@@ -233,16 +233,25 @@ public class ModelFeatureLabelJdbcRepository {
 
     @Transactional
     public FeatureLabelBuildResult rebuild(LocalDate from, LocalDate to) {
+        return rebuild(from, to, FeatureBuildService.FEATURE_VERSION);
+    }
+
+    @Transactional
+    public FeatureLabelBuildResult rebuild(
+        LocalDate from,
+        LocalDate to,
+        String featureVersion
+    ) {
         jdbcTemplate.update(
             UPSERT_FEATURES,
-            FeatureBuildService.FEATURE_VERSION,
+            featureVersion,
             Date.valueOf(from),
             Date.valueOf(to)
         );
         jdbcTemplate.update(
             UPDATE_LABELS,
             ModelFeatureLabelService.LABEL_VERSION,
-            FeatureBuildService.FEATURE_VERSION,
+            featureVersion,
             Date.valueOf(from),
             Date.valueOf(to)
         );
@@ -266,7 +275,7 @@ public class ModelFeatureLabelJdbcRepository {
                 }
                 return result;
             },
-            FeatureBuildService.FEATURE_VERSION,
+            featureVersion,
             Date.valueOf(from),
             Date.valueOf(to)
         );
@@ -274,7 +283,7 @@ public class ModelFeatureLabelJdbcRepository {
         int missing = counts.getOrDefault("MISSING_TARGET", 0);
         int incomplete = counts.getOrDefault("INCOMPLETE_SOURCE", 0);
         return new FeatureLabelBuildResult(
-            FeatureBuildService.FEATURE_VERSION,
+            featureVersion,
             ModelFeatureLabelService.LABEL_VERSION,
             ready + missing + incomplete + counts.getOrDefault("PENDING", 0),
             ready,

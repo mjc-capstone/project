@@ -1,6 +1,7 @@
 package com.capstone.ai_insite.analysis.repository;
 
 import com.capstone.ai_insite.analysis.entity.ModelFeatureSnapshotEntity;
+import com.capstone.ai_insite.analysis.domain.ModelLabelStatus;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -22,5 +23,11 @@ public interface ModelFeatureSnapshotJpaRepository
             String featureVersion,
             LocalDate from,
             LocalDate to
+        );
+
+    Optional<ModelFeatureSnapshotEntity>
+        findFirstByFeatureVersionAndLabelStatusOrderByIdAsc(
+            String featureVersion,
+            ModelLabelStatus labelStatus
         );
 }
