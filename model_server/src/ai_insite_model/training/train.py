@@ -15,11 +15,10 @@ import numpy as np
 import sklearn
 
 from ai_insite_model.features.schema import (
-    CATEGORICAL_FEATURES,
-    FEATURE_NAMES,
-    FEATURE_SCHEMA_VERSION,
+    CORE_PROFILE,
+    ENRICHED_PROFILE,
     TARGETS,
-    feature_schema_hash,
+    schema_for_profile,
 )
 from ai_insite_model.features.transformer import CoreFeatureTransformer
 from ai_insite_model.inference.artifact_loader import file_sha256
@@ -38,6 +37,7 @@ def main() -> None:
         release_version=arguments.release,
         dataset_version=arguments.dataset_version,
         feature_version=arguments.feature_version,
+        feature_profile=arguments.feature_profile,
         num_threads=arguments.num_threads,
         overwrite=arguments.overwrite,
     )
@@ -49,6 +49,7 @@ def train_release(
     release_version: str,
     dataset_version: str,
     feature_version: str,
+    feature_profile: str = CORE_PROFILE,
     num_threads: int = 4,
     overwrite: bool = False,
 ) -> Path:
@@ -58,7 +59,11 @@ def train_release(
         raise ValueError("num_threads must be between 1 and 4")
 
     dataset = load_ndjson(dataset_path)
-    transformer = CoreFeatureTransformer.fit(dataset.by_split["TRAIN"])
+    schema = schema_for_profile(feature_profile)
+    transformer = CoreFeatureTransformer.fit(
+        dataset.by_split["TRAIN"],
+        feature_profile,
+    )
     matrices = {
         split: transformer.transform_rows(rows)
         for split, rows in dataset.by_split.items()
@@ -84,6 +89,8 @@ def train_release(
                 temporary_path,
                 num_threads,
                 seed=20260805 + index,
+                feature_names=schema.feature_names,
+                categorical_features=schema.categorical,
             )
             target_manifests[target] = result["manifest"]
             target_metrics[target] = result["metrics"]
@@ -108,11 +115,15 @@ def train_release(
             "releaseVersion": release_version,
             "datasetVersion": dataset_version,
             "featureVersion": feature_version,
-            "featureSchemaVersion": FEATURE_SCHEMA_VERSION,
-            "featureSchemaHash": feature_schema_hash(),
-            "featureNames": list(FEATURE_NAMES),
-            "categoricalFeatures": list(CATEGORICAL_FEATURES),
-            "modelType": "CPU_LIGHTGBM_CORE_V1",
+            "featureSchemaVersion": schema.version,
+            "featureSchemaHash": schema.checksum,
+            "featureNames": list(schema.feature_names),
+            "categoricalFeatures": list(schema.categorical),
+            "modelType": (
+                "CPU_LIGHTGBM_ENRICHED_V1"
+                if feature_profile == ENRICHED_PROFILE
+                else "CPU_LIGHTGBM_CORE_V1"
+            ),
             "eligibleForActivation": all(improvements),
             "createdAt": datetime.now(timezone.utc).isoformat(),
             "runtime": {
@@ -150,6 +161,8 @@ def train_target(
     artifact_path: Path,
     num_threads: int,
     seed: int,
+    feature_names: tuple[str, ...],
+    categorical_features: tuple[str, ...],
 ) -> dict[str, Any]:
     prepared: dict[str, tuple[np.ndarray, np.ndarray]] = {}
     for split, rows in dataset.by_split.items():
@@ -201,16 +214,16 @@ def train_target(
     train_set = lgb.Dataset(
         train_x,
         label=train_y,
-        feature_name=list(FEATURE_NAMES),
-        categorical_feature=list(CATEGORICAL_FEATURES),
+        feature_name=list(feature_names),
+        categorical_feature=list(categorical_features),
         free_raw_data=False,
     )
     validation_set = lgb.Dataset(
         validation_x,
         label=validation_y,
         reference=train_set,
-        feature_name=list(FEATURE_NAMES),
-        categorical_feature=list(CATEGORICAL_FEATURES),
+        feature_name=list(feature_names),
+        categorical_feature=list(categorical_features),
         free_raw_data=False,
     )
     model = lgb.train(
@@ -308,6 +321,11 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--release", required=True)
     parser.add_argument("--dataset-version", required=True)
     parser.add_argument("--feature-version", default="feature-v3-building")
+    parser.add_argument(
+        "--feature-profile",
+        choices=(CORE_PROFILE, ENRICHED_PROFILE),
+        default=CORE_PROFILE,
+    )
     parser.add_argument("--num-threads", type=int, default=4)
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()

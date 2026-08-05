@@ -8,7 +8,7 @@ from typing import Any, Mapping
 
 import lightgbm as lgb
 
-from ai_insite_model.features.schema import FEATURE_NAMES, feature_schema_hash
+from ai_insite_model.features.schema import schema_for_version
 from ai_insite_model.features.transformer import CoreFeatureTransformer, TransformerState
 
 
@@ -47,9 +47,10 @@ def load_artifact(release_path: Path) -> LoadedArtifact:
         raise ValueError(f"Missing model manifest: {manifest_path}")
     raw = json.loads(manifest_path.read_text(encoding="utf-8"))
     require_manifest_fields(raw)
-    if raw["featureSchemaHash"] != feature_schema_hash():
+    schema = schema_for_version(str(raw["featureSchemaVersion"]))
+    if raw["featureSchemaHash"] != schema.checksum:
         raise ValueError("Feature schema checksum does not match server code")
-    if tuple(raw["featureNames"]) != FEATURE_NAMES:
+    if tuple(raw["featureNames"]) != schema.feature_names:
         raise ValueError("Feature order does not match server code")
 
     targets = {
@@ -73,6 +74,8 @@ def load_artifact(release_path: Path) -> LoadedArtifact:
         models[name] = lgb.Booster(model_file=str(path))
 
     transformer_state = TransformerState.from_dict(raw["transformer"])
+    if transformer_state.featureProfile != schema.profile:
+        raise ValueError("Transformer profile does not match feature schema")
     manifest = ModelManifest(
         releaseVersion=str(raw["releaseVersion"]),
         datasetVersion=str(raw["datasetVersion"]),

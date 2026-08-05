@@ -7,7 +7,12 @@ from typing import Any, Iterable, Mapping
 
 import numpy as np
 
-from ai_insite_model.features.schema import FEATURE_NAMES, RAW_NUMERIC_FEATURES
+from ai_insite_model.features.schema import (
+    CORE_PROFILE,
+    ENRICHED_PROFILE,
+    POPULATION_RAW_FEATURES,
+    schema_for_profile,
+)
 
 
 @dataclass(frozen=True)
@@ -15,12 +20,14 @@ class TransformerState:
     regionCodes: tuple[str, ...]
     categoryCodes: tuple[str, ...]
     medians: dict[str, float]
+    featureProfile: str = CORE_PROFILE
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "regionCodes": list(self.regionCodes),
             "categoryCodes": list(self.categoryCodes),
             "medians": self.medians,
+            "featureProfile": self.featureProfile,
         }
 
     @classmethod
@@ -29,33 +36,40 @@ class TransformerState:
             regionCodes=tuple(str(item) for item in value["regionCodes"]),
             categoryCodes=tuple(str(item) for item in value["categoryCodes"]),
             medians={str(key): float(item) for key, item in value["medians"].items()},
+            featureProfile=str(value.get("featureProfile", CORE_PROFILE)),
         )
 
 
 class CoreFeatureTransformer:
     def __init__(self, state: TransformerState) -> None:
         self.state = state
+        self.schema = schema_for_profile(state.featureProfile)
         self._regions = {code: index for index, code in enumerate(state.regionCodes)}
         self._categories = {
             code: index for index, code in enumerate(state.categoryCodes)
         }
 
     @classmethod
-    def fit(cls, rows: Iterable[Mapping[str, Any]]) -> "CoreFeatureTransformer":
+    def fit(
+        cls,
+        rows: Iterable[Mapping[str, Any]],
+        feature_profile: str = CORE_PROFILE,
+    ) -> "CoreFeatureTransformer":
         materialized = list(rows)
         if not materialized:
             raise ValueError("Transformer training rows must not be empty")
         regions = tuple(sorted({str(row["regionCode"]) for row in materialized}))
         categories = tuple(sorted({str(row["categoryCode"]) for row in materialized}))
         medians: dict[str, float] = {}
-        for name in RAW_NUMERIC_FEATURES:
+        schema = schema_for_profile(feature_profile)
+        for name in schema.raw_numeric:
             values = [
                 number(row.get("features", {}).get(name))
                 for row in materialized
             ]
             finite = [value for value in values if value is not None]
             medians[name] = float(np.median(finite)) if finite else 0.0
-        return cls(TransformerState(regions, categories, medians))
+        return cls(TransformerState(regions, categories, medians, feature_profile))
 
     def transform_rows(self, rows: Iterable[Mapping[str, Any]]) -> np.ndarray:
         return np.asarray([self.transform_row(row) for row in rows], dtype=np.float64)
@@ -78,17 +92,28 @@ class CoreFeatureTransformer:
             self._value(raw, "marketScore"),
             self._value(raw, "stabilityScore"),
             self._value(raw, "closureRiskSignal"),
+        ]
+        if self.state.featureProfile == ENRICHED_PROFILE:
+            populations = [number(raw.get(name)) for name in POPULATION_RAW_FEATURES]
+            values.extend(
+                math.log1p(max(self._value(raw, name), 0.0))
+                for name in POPULATION_RAW_FEATURES
+            )
+            values.extend(1.0 if value is None else 0.0 for value in populations)
+        values.extend((
             float(((as_of.month - 1) // 3) + 1),
             float(as_of.year * 4 + ((as_of.month - 1) // 3)),
-        ]
-        if len(values) != len(FEATURE_NAMES):
+        ))
+        if len(values) != len(self.schema.feature_names):
             raise AssertionError("Feature vector does not match schema")
         return values
 
     def missing_rate(self, row: Mapping[str, Any]) -> float:
         raw = row.get("features", row.get("marketFeatures", {}))
-        missing = sum(number(raw.get(name)) is None for name in RAW_NUMERIC_FEATURES)
-        return missing / len(RAW_NUMERIC_FEATURES)
+        missing = sum(
+            number(raw.get(name)) is None for name in self.schema.raw_numeric
+        )
+        return missing / len(self.schema.raw_numeric)
 
     def has_known_categories(self, row: Mapping[str, Any]) -> bool:
         return (

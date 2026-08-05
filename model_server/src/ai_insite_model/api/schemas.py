@@ -28,8 +28,18 @@ class MarketFeatures(StrictModel):
     marketScore: FiniteFloat | None = None
     stabilityScore: FiniteFloat | None = None
     closureRiskSignal: FiniteFloat | None = None
+    floatingPopulation: FiniteFloat | None = None
+    residentPopulation: FiniteFloat | None = None
+    workingPopulation: FiniteFloat | None = None
 
-    @field_validator("salesAmount", "salesCount", "storeCount")
+    @field_validator(
+        "salesAmount",
+        "salesCount",
+        "storeCount",
+        "floatingPopulation",
+        "residentPopulation",
+        "workingPopulation",
+    )
     @classmethod
     def require_non_negative(cls, value: float | None) -> float | None:
         if value is not None and value < 0:
