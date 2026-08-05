@@ -27,8 +27,12 @@ public class RebCommercialRentApiParser {
         String targetPeriodIdentifier
     ) {
         try {
-            JsonNode root = objectMapper.readTree(responseBody)
-                .path("SttsApiTblData");
+            JsonNode document = objectMapper.readTree(responseBody);
+            JsonNode result = document.path("RESULT");
+            if ("INFO-200".equals(result.path("CODE").asText())) {
+                return new RebCommercialRentPage(0, 0, List.of());
+            }
+            JsonNode root = document.path("SttsApiTblData");
             JsonNode head = root.path(0).path("head");
             String resultCode = head.path(1).path("RESULT").path("CODE").asText();
             if (!"INFO-000".equals(resultCode)) {
