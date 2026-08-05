@@ -1,0 +1,30 @@
+{
+  "requestId": "contract-001",
+  "schemaVersion": "prediction-input-v1",
+  "requestedModelReleaseVersion": "core-v1-test",
+  "featureVersion": "feature-v3-building",
+  "featureSnapshotId": 1,
+  "featureAsOfDate": "2026-03-31",
+  "marketFeatures": {
+    "categoryCode": "CS100001",
+    "regionCode": "11110515",
+    "salesAmount": 120000000,
+    "salesCount": 25000,
+    "salesGrowthRateQoq": 2.5,
+    "storeCount": 23,
+    "storeGrowthRateQoq": -1.2,
+    "demandScore": 55.0,
+    "competitionScore": 48.0,
+    "marketScore": 53.0,
+    "stabilityScore": 61.0,
+    "closureRiskSignal": 18.0
+  },
+  "userCondition": {
+    "budget": 100000000,
+    "maxMonthlyRent": 3000000,
+    "targetMonthlySales": 25000000,
+    "preferredAreaSquareMeter": 45.0,
+    "operationType": "INDEPENDENT",
+    "franchise": false
+  }
+}

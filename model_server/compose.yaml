@@ -1,0 +1,25 @@
+services:
+  model-server:
+    image: ai-insite/model-server:${MODEL_RELEASE}
+    container_name: ai-insite-model-server
+    cpus: "2.0"
+    mem_limit: 1536m
+    environment:
+      MODEL_RELEASE: ${MODEL_RELEASE}
+      MODEL_BASE_PATH: /models
+      OMP_NUM_THREADS: 2
+      OPENBLAS_NUM_THREADS: 1
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  model-trainer:
+    image: ai-insite/model-trainer:lightgbm-v1
+    profiles: ["training"]
+    cpus: "4.0"
+    mem_limit: 5g
+    environment:
+      OMP_NUM_THREADS: 4
+      OPENBLAS_NUM_THREADS: 1
+    volumes:
+      - ./data:/data:ro
+      - ./artifacts:/artifacts
