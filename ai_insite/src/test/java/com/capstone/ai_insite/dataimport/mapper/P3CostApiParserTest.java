@@ -47,6 +47,20 @@ class P3CostApiParserTest {
     }
 
     @Test
+    void treatsRebNoDataResponseAsAnEmptyPage() {
+        var page = new RebCommercialRentApiParser(objectMapper).parse(
+            "{\"RESULT\":{\"CODE\":\"INFO-200\",\"MESSAGE\":\"no data\"}}",
+            RebCommercialPropertyType.SMALL_RETAIL,
+            RebCommercialMetricType.RENT_AMOUNT,
+            "202302"
+        );
+
+        assertEquals(0, page.totalCount());
+        assertEquals(0, page.sourceRowCount());
+        assertTrue(page.observations().isEmpty());
+    }
+
+    @Test
     void parsesMolitXmlAmountsAreasAndCancellation() {
         String response = """
             <response><header><resultCode>000</resultCode><resultMsg>OK</resultMsg></header>
