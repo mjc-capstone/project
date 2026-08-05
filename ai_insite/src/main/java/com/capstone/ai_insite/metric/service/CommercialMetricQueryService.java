@@ -90,7 +90,7 @@ public class CommercialMetricQueryService {
             .orElse(null);
     }
 
-    public MetricPeriodEntity period(String code) {
+    private MetricPeriodEntity period(String code) {
         return periodRepository.findByPeriodCode(code)
             .orElseThrow(() -> new ResourceNotFoundException("지표 기간을 찾을 수 없습니다: " + code));
     }

@@ -8,7 +8,6 @@ import com.capstone.ai_insite.analysis.domain.ModelDatasetBuildCommand;
 import com.capstone.ai_insite.analysis.repository.ModelDatasetBuildJpaRepository;
 import com.capstone.ai_insite.analysis.service.ModelDatasetApplicationService;
 import com.capstone.ai_insite.analysis.service.ModelDatasetAuditService;
-import com.capstone.ai_insite.analysis.service.ModelFeatureLabelService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,9 +24,6 @@ class P6DataReadinessIntegrationTest {
         "seoul-commercial-2023q2-2026q1-v1";
 
     @Autowired
-    private ModelFeatureLabelService featureLabelService;
-
-    @Autowired
     private ModelDatasetApplicationService datasetService;
 
     @Autowired
@@ -41,18 +37,13 @@ class P6DataReadinessIntegrationTest {
         var existing = datasetRepository.findByDatasetVersion(DATASET_VERSION);
         var dataset = existing
             .map(entity -> datasetService.get(entity.getId()))
-            .orElseGet(() -> {
-                var labels = featureLabelService.rebuild("2023Q2", "2026Q1");
-                assertTrue(labels.processedCount() >= 150_000);
-                assertTrue(labels.readyCount() >= 100_000);
-                return datasetService.build(new ModelDatasetBuildCommand(
+            .orElseGet(() -> datasetService.build(new ModelDatasetBuildCommand(
                 DATASET_VERSION,
                 "2023Q2",
                 "2024Q4",
                 "2025Q2",
                 "2026Q1"
-                ));
-            });
+            )));
 
         assertTrue(dataset.trainExampleCount() > 0);
         assertTrue(dataset.validationExampleCount() > 0);

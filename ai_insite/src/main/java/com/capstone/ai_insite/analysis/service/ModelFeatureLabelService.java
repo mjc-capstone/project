@@ -10,6 +10,7 @@ import com.capstone.ai_insite.analysis.entity.ModelFeatureSnapshotEntity;
 import com.capstone.ai_insite.metric.domain.CommercialMetric;
 import com.capstone.ai_insite.metric.entity.CommercialMetricSnapshotEntity;
 import com.capstone.ai_insite.metric.repository.CommercialMetricSnapshotJpaRepository;
+import com.capstone.ai_insite.metric.repository.MetricPeriodJpaRepository;
 import com.capstone.ai_insite.metric.service.CommercialMetricQueryService;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class ModelFeatureLabelService {
     private final NextQuarterLabelPolicy labelPolicy;
     private final ObjectMapper objectMapper;
     private final ModelFeatureLabelJdbcRepository bulkRepository;
+    private final MetricPeriodJpaRepository periodRepository;
 
     public ModelFeatureLabelService(
         CommercialMetricQueryService metricQueryService,
@@ -34,7 +36,8 @@ public class ModelFeatureLabelService {
         FeatureBuildService featureBuildService,
         NextQuarterLabelPolicy labelPolicy,
         ObjectMapper objectMapper,
-        ModelFeatureLabelJdbcRepository bulkRepository
+        ModelFeatureLabelJdbcRepository bulkRepository,
+        MetricPeriodJpaRepository periodRepository
     ) {
         this.metricQueryService = metricQueryService;
         this.metricRepository = metricRepository;
@@ -42,11 +45,18 @@ public class ModelFeatureLabelService {
         this.labelPolicy = labelPolicy;
         this.objectMapper = objectMapper;
         this.bulkRepository = bulkRepository;
+        this.periodRepository = periodRepository;
     }
 
     public FeatureLabelBuildResult rebuild(String fromPeriod, String toPeriod) {
-        var from = metricQueryService.period(fromPeriod);
-        var to = metricQueryService.period(toPeriod);
+        var from = periodRepository.findByPeriodCode(fromPeriod)
+            .orElseThrow(() -> new IllegalArgumentException(
+                "지표 기간을 찾을 수 없습니다: " + fromPeriod
+            ));
+        var to = periodRepository.findByPeriodCode(toPeriod)
+            .orElseThrow(() -> new IllegalArgumentException(
+                "지표 기간을 찾을 수 없습니다: " + toPeriod
+            ));
         if (from.getStartDate().isAfter(to.getEndDate())) {
             throw new IllegalArgumentException("조회 시작 분기는 종료 분기보다 늦을 수 없습니다.");
         }
