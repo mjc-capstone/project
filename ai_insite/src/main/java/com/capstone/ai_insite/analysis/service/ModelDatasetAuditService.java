@@ -63,14 +63,18 @@ public class ModelDatasetAuditService {
                 "모델 데이터셋을 찾을 수 없습니다: " + datasetId
             ));
         AuditAccumulator audit = new AuditAccumulator();
-        int page = 0;
+        long lastId = 0L;
         Slice<ModelDatasetMemberEntity> members;
         do {
-            members = memberRepository.findByDatasetBuildIdOrderByIdAsc(
+            members = memberRepository.findByDatasetBuildIdAndIdGreaterThanOrderByIdAsc(
                 datasetId,
-                PageRequest.of(page++, PAGE_SIZE)
+                lastId,
+                PageRequest.of(0, PAGE_SIZE)
             );
             members.forEach(member -> accumulate(audit, member));
+            if (members.hasContent()) {
+                lastId = members.getContent().getLast().getId();
+            }
         } while (members.hasNext());
 
         List<String> blockers = blockers(audit);

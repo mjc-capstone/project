@@ -4,7 +4,6 @@ import com.capstone.ai_insite.analysis.domain.DatasetSplit;
 import com.capstone.ai_insite.analysis.domain.ModelDatasetBuildCommand;
 import com.capstone.ai_insite.analysis.domain.ModelDatasetBuildResult;
 import com.capstone.ai_insite.analysis.domain.ModelDatasetExample;
-import com.capstone.ai_insite.analysis.domain.ModelLabelStatus;
 import com.capstone.ai_insite.analysis.domain.ModelEvaluationCommand;
 import com.capstone.ai_insite.analysis.domain.policy.TemporalDatasetSplitPolicy;
 import com.capstone.ai_insite.analysis.entity.ModelDatasetBuildEntity;
@@ -12,12 +11,10 @@ import com.capstone.ai_insite.analysis.entity.ModelDatasetMemberEntity;
 import com.capstone.ai_insite.analysis.entity.ModelFeatureSnapshotEntity;
 import com.capstone.ai_insite.analysis.repository.ModelDatasetBuildJpaRepository;
 import com.capstone.ai_insite.analysis.repository.ModelDatasetMemberJpaRepository;
-import com.capstone.ai_insite.analysis.repository.ModelFeatureSnapshotJpaRepository;
+import com.capstone.ai_insite.analysis.repository.ModelDatasetMemberJdbcRepository;
 import com.capstone.ai_insite.common.exception.ResourceNotFoundException;
 import com.capstone.ai_insite.metric.entity.MetricPeriodEntity;
 import com.capstone.ai_insite.metric.repository.MetricPeriodJpaRepository;
-import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
@@ -29,24 +26,24 @@ public class ModelDatasetApplicationService {
     private final ModelFeatureLabelService featureLabelService;
     private final TemporalDatasetSplitPolicy splitPolicy;
     private final MetricPeriodJpaRepository periodRepository;
-    private final ModelFeatureSnapshotJpaRepository featureRepository;
     private final ModelDatasetBuildJpaRepository datasetRepository;
     private final ModelDatasetMemberJpaRepository memberRepository;
+    private final ModelDatasetMemberJdbcRepository memberJdbcRepository;
 
     public ModelDatasetApplicationService(
         ModelFeatureLabelService featureLabelService,
         TemporalDatasetSplitPolicy splitPolicy,
         MetricPeriodJpaRepository periodRepository,
-        ModelFeatureSnapshotJpaRepository featureRepository,
         ModelDatasetBuildJpaRepository datasetRepository,
-        ModelDatasetMemberJpaRepository memberRepository
+        ModelDatasetMemberJpaRepository memberRepository,
+        ModelDatasetMemberJdbcRepository memberJdbcRepository
     ) {
         this.featureLabelService = featureLabelService;
         this.splitPolicy = splitPolicy;
         this.periodRepository = periodRepository;
-        this.featureRepository = featureRepository;
         this.datasetRepository = datasetRepository;
         this.memberRepository = memberRepository;
+        this.memberJdbcRepository = memberJdbcRepository;
     }
 
     @Transactional
@@ -86,35 +83,16 @@ public class ModelDatasetApplicationService {
             )
         );
 
-        List<ModelDatasetMemberEntity> members = new ArrayList<>();
-        Map<DatasetSplit, Integer> counts = new EnumMap<>(DatasetSplit.class);
-        for (ModelFeatureSnapshotEntity feature : featureRepository
-            .findByFeatureVersionAndMetricPeriodStartDateBetweenOrderByMetricPeriodStartDateAsc(
-                FeatureBuildService.FEATURE_VERSION,
-                featureFrom.getStartDate(),
-                testThrough.getEndDate()
-            )) {
-            if (feature.getLabelStatus() != ModelLabelStatus.READY
-                || !ModelFeatureLabelService.LABEL_VERSION.equals(feature.getLabelVersion())
-                || feature.getLabelPeriod() == null
-                || feature.getLabelHorizonPeriod() == null
-                || feature.getLabelHorizonPeriod().getEndDate().isAfter(
-                    testThrough.getEndDate()
-                )) {
-                continue;
-            }
-            DatasetSplit split = splitPolicy.assign(
-                feature.getFeatureAsOfDate(),
-                feature.getLabelHorizonPeriod().getStartDate(),
-                feature.getLabelHorizonPeriod().getEndDate(),
-                trainThrough.getEndDate(),
-                validationThrough.getEndDate(),
-                testThrough.getEndDate()
-            );
-            members.add(new ModelDatasetMemberEntity(dataset, feature, split));
-            counts.merge(split, 1, Integer::sum);
-        }
-        memberRepository.saveAll(members);
+        Map<DatasetSplit, Integer> counts = memberJdbcRepository.createMembers(
+            dataset.getId(),
+            FeatureBuildService.FEATURE_VERSION,
+            ModelFeatureLabelService.LABEL_VERSION,
+            featureFrom.getStartDate(),
+            testThrough.getEndDate(),
+            trainThrough.getEndDate(),
+            validationThrough.getEndDate(),
+            testThrough.getEndDate()
+        );
         dataset.complete(
             counts.getOrDefault(DatasetSplit.TRAIN, 0),
             counts.getOrDefault(DatasetSplit.VALIDATION, 0),

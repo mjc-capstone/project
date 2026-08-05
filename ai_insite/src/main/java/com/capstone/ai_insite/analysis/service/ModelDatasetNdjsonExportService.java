@@ -42,19 +42,28 @@ public class ModelDatasetNdjsonExportService {
                 "모델 데이터셋을 찾을 수 없습니다: " + datasetId
             );
         }
-        int page = 0;
+        long lastId = 0L;
         Slice<ModelDatasetMemberEntity> members;
         do {
-            PageRequest pageable = PageRequest.of(page++, PAGE_SIZE);
+            PageRequest pageable = PageRequest.of(0, PAGE_SIZE);
             members = split == null
-                ? memberRepository.findByDatasetBuildIdOrderByIdAsc(datasetId, pageable)
-                : memberRepository.findByDatasetBuildIdAndDatasetSplitOrderByIdAsc(
+                ? memberRepository.findByDatasetBuildIdAndIdGreaterThanOrderByIdAsc(
+                    datasetId,
+                    lastId,
+                    pageable
+                )
+                : memberRepository
+                    .findByDatasetBuildIdAndDatasetSplitAndIdGreaterThanOrderByIdAsc(
                     datasetId,
                     split,
+                    lastId,
                     pageable
                 );
             for (ModelDatasetMemberEntity member : members) {
                 writeRow(member, output);
+            }
+            if (members.hasContent()) {
+                lastId = members.getContent().getLast().getId();
             }
         } while (members.hasNext());
     }
