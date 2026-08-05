@@ -49,6 +49,15 @@ public class ModelFeatureLabelService {
     }
 
     public FeatureLabelBuildResult rebuild(String fromPeriod, String toPeriod) {
+        return rebuild(fromPeriod, toPeriod, FeatureBuildService.FEATURE_VERSION);
+    }
+
+    public FeatureLabelBuildResult rebuild(
+        String fromPeriod,
+        String toPeriod,
+        String featureVersion
+    ) {
+        requireSupportedFeatureVersion(featureVersion);
         var from = periodRepository.findByPeriodCode(fromPeriod)
             .orElseThrow(() -> new IllegalArgumentException(
                 "지표 기간을 찾을 수 없습니다: " + fromPeriod
@@ -60,7 +69,20 @@ public class ModelFeatureLabelService {
         if (from.getStartDate().isAfter(to.getEndDate())) {
             throw new IllegalArgumentException("조회 시작 분기는 종료 분기보다 늦을 수 없습니다.");
         }
-        return bulkRepository.rebuild(from.getStartDate(), to.getEndDate());
+        return bulkRepository.rebuild(
+            from.getStartDate(),
+            to.getEndDate(),
+            featureVersion
+        );
+    }
+
+    private static void requireSupportedFeatureVersion(String featureVersion) {
+        if (!FeatureBuildService.FEATURE_VERSION.equals(featureVersion)
+            && !FeatureBuildService.ENRICHED_FEATURE_VERSION.equals(featureVersion)) {
+            throw new IllegalArgumentException(
+                "지원하지 않는 피처 버전입니다: " + featureVersion
+            );
+        }
     }
 
     @Transactional

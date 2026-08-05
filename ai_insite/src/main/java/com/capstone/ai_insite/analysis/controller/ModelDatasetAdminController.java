@@ -11,6 +11,7 @@ import com.capstone.ai_insite.analysis.service.ModelDatasetApplicationService;
 import com.capstone.ai_insite.analysis.service.ModelFeatureLabelService;
 import com.capstone.ai_insite.analysis.service.ModelDatasetNdjsonExportService;
 import com.capstone.ai_insite.analysis.service.ModelDatasetAuditService;
+import com.capstone.ai_insite.analysis.service.FeatureBuildService;
 import java.util.List;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -64,10 +65,12 @@ public class ModelDatasetAdminController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ModelDatasetBuildResponse build(
-        @RequestBody ModelDatasetBuildRequest request
+        @RequestBody ModelDatasetBuildRequest request,
+        @RequestParam(defaultValue = FeatureBuildService.FEATURE_VERSION)
+        String featureVersion
     ) {
         return ModelDatasetBuildResponse.from(
-            datasetService.build(request.toCommand()),
+            datasetService.build(request.toCommand(), featureVersion),
             objectMapper
         );
     }

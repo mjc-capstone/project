@@ -22,6 +22,7 @@ import tools.jackson.databind.ObjectMapper;
 public class FeatureBuildService {
 
     public static final String FEATURE_VERSION = "feature-v3-building";
+    public static final String ENRICHED_FEATURE_VERSION = "feature-v4-enriched";
 
     private final CommercialMetricSnapshotJpaRepository metricRepository;
     private final CommercialCompetitionFeatureJpaRepository competitionRepository;

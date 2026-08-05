@@ -48,6 +48,14 @@ public class ModelDatasetApplicationService {
 
     @Transactional
     public ModelDatasetBuildResult build(ModelDatasetBuildCommand command) {
+        return build(command, FeatureBuildService.FEATURE_VERSION);
+    }
+
+    @Transactional
+    public ModelDatasetBuildResult build(
+        ModelDatasetBuildCommand command,
+        String featureVersion
+    ) {
         if (datasetRepository.existsByDatasetVersion(command.datasetVersion())) {
             throw new IllegalArgumentException(
                 "이미 존재하는 데이터셋 버전입니다: " + command.datasetVersion()
@@ -69,12 +77,13 @@ public class ModelDatasetApplicationService {
 
         featureLabelService.rebuild(
             featureFrom.getPeriodCode(),
-            testThrough.getPeriodCode()
+            testThrough.getPeriodCode(),
+            featureVersion
         );
         ModelDatasetBuildEntity dataset = datasetRepository.save(
             new ModelDatasetBuildEntity(
                 command.datasetVersion(),
-                FeatureBuildService.FEATURE_VERSION,
+                featureVersion,
                 ModelFeatureLabelService.LABEL_VERSION,
                 featureFrom,
                 trainThrough,
@@ -85,7 +94,7 @@ public class ModelDatasetApplicationService {
 
         Map<DatasetSplit, Integer> counts = memberJdbcRepository.createMembers(
             dataset.getId(),
-            FeatureBuildService.FEATURE_VERSION,
+            featureVersion,
             ModelFeatureLabelService.LABEL_VERSION,
             featureFrom.getStartDate(),
             testThrough.getEndDate(),
