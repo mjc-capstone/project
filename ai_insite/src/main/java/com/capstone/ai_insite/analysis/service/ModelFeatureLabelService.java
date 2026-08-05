@@ -1,6 +1,7 @@
 package com.capstone.ai_insite.analysis.service;
 
 import com.capstone.ai_insite.analysis.domain.FeatureLabelBuildResult;
+import com.capstone.ai_insite.analysis.repository.ModelFeatureLabelJdbcRepository;
 import com.capstone.ai_insite.analysis.domain.ModelLabelDecision;
 import com.capstone.ai_insite.analysis.domain.ModelLabelObservation;
 import com.capstone.ai_insite.analysis.domain.ModelLabelStatus;
@@ -25,23 +26,35 @@ public class ModelFeatureLabelService {
     private final FeatureBuildService featureBuildService;
     private final NextQuarterLabelPolicy labelPolicy;
     private final ObjectMapper objectMapper;
+    private final ModelFeatureLabelJdbcRepository bulkRepository;
 
     public ModelFeatureLabelService(
         CommercialMetricQueryService metricQueryService,
         CommercialMetricSnapshotJpaRepository metricRepository,
         FeatureBuildService featureBuildService,
         NextQuarterLabelPolicy labelPolicy,
-        ObjectMapper objectMapper
+        ObjectMapper objectMapper,
+        ModelFeatureLabelJdbcRepository bulkRepository
     ) {
         this.metricQueryService = metricQueryService;
         this.metricRepository = metricRepository;
         this.featureBuildService = featureBuildService;
         this.labelPolicy = labelPolicy;
         this.objectMapper = objectMapper;
+        this.bulkRepository = bulkRepository;
+    }
+
+    public FeatureLabelBuildResult rebuild(String fromPeriod, String toPeriod) {
+        var from = metricQueryService.period(fromPeriod);
+        var to = metricQueryService.period(toPeriod);
+        if (from.getStartDate().isAfter(to.getEndDate())) {
+            throw new IllegalArgumentException("조회 시작 분기는 종료 분기보다 늦을 수 없습니다.");
+        }
+        return bulkRepository.rebuild(from.getStartDate(), to.getEndDate());
     }
 
     @Transactional
-    public FeatureLabelBuildResult rebuild(String fromPeriod, String toPeriod) {
+    FeatureLabelBuildResult rebuildOneByOne(String fromPeriod, String toPeriod) {
         int ready = 0;
         int missing = 0;
         int incomplete = 0;
